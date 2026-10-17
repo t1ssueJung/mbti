@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Gamja+Flower&family=Noto+Sans+KR:wght@400;700&display=swap');
+        
+        body { 
+            font-family: 'Noto Sans KR', sans-serif; 
+            background-color: #f0f7ff; 
+            padding: 20px; 
+            margin: 0; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container { 
+            background-color: white; 
+            border-radius: 20px; 
+            padding: 25px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+            text-align: center; 
+            max-width: 450px; 
+            width: 100%;
+            box-sizing: border-box;
+        }
+        h1 { font-family: 'Gamja Flower', cursive; color: #4a90e2; font-size: 2.2rem; margin: 10px 0; }
+        .input-group { margin: 25px 0; }
+        input[type="text"] { padding: 12px; font-size: 1.1rem; border: 2px solid #ddd; border-radius: 10px; width: 80%; text-align: center; outline: none;}
+        input[type="text"]:focus { border-color: #4a90e2; }
+        button { background-color: #4a90e2; color: white; border: none; padding: 12px 20px; font-size: 1.1rem; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px;}
+        button:hover { background-color: #357abd; }
+        
+        .save-btn { background-color: #20c997; margin-top: 15px; }
+        .save-btn:hover { background-color: #12b886; }
+
+        .progress-bar { background-color: #eee; border-radius: 10px; height: 10px; width: 100%; margin-bottom: 15px; overflow: hidden; }
+        .progress { background-color: #4a90e2; height: 100%; width: 0%; transition: width 0.3s; }
+        .question-text { font-size: 1.2rem; font-weight: bold; margin: 30px 0; word-break: keep-all; line-height: 1.5; color: #333; }
+        .answer-btn { background-color: #f8f9fa; border: 2px solid #e9ecef; color: #333; width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; font-size: 1rem; text-align: left; cursor: pointer; transition: all 0.2s; }
+        .answer-btn:hover { background-color: #e3fafc; border-color: #99e9f2; transform: translateY(-2px); }
+        
+        #result-card { background: linear-gradient(135deg, #e6f7ff 0%, #fff0f6 100%); border-radius: 15px; padding: 25px 20px; margin-bottom: 15px; border: 3px dashed #baa4f4; }
+        .mbti-type { font-size: 3rem; font-weight: bold; color: #7048e8; margin: 8px 0; letter-spacing: 1px; }
+        .bar-container { margin: 12px 0; text-align: left; font-size: 0.9rem; }
+        .bar-label { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 4px; color: #444; }
+        .bar-bg { background-color: #e9ecef; height: 12px; border-radius: 6px; overflow: hidden; }
+        .bar-fill { background-color: #baa4f4; height: 100%; width: 50%; }
+        .hidden { display: none; }
+        .status { font-size: 0.95rem; color: #20c997; margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 이름 입력 -->
+        <div id="start-page">
+            <h1>나의 MBTI 찾기!</h1>
+            <p style="color: #666; font-size: 0.95rem;">재미있는 40가지 질문을 통해 나를 알아봐요.</p>
+            <div class="input-group">
+                <input type="text" id="student-name" placeholder="이름을 적어주세요" maxlength="10">
+            </div>
+            <button onclick="startTest()">테스트 시작하기 🚀</button>
+        </div>
+
+        <!-- 질문 화면 -->
+        <div id="question-page" class="hidden">
+            <div class="progress-bar"><div id="progress" class="progress"></div></div>
+            <div style="color: #888; font-size:0.9rem; font-weight: bold;" id="question-counter">1 / 40</div>
+            <div class="question-text" id="question-text">질문</div>
+            <button class="answer-btn" id="ansA" onclick="submitAnswer('A')">A</button>
+            <button class="answer-btn" id="ansB" onclick="submitAnswer('B')">B</button>
+        </div>
+
+        <!-- 결과 화면 -->
+        <div id="result-page" class="hidden">
+            <div id="result-card">
+                <div style="font-size:1rem; color: #666;"><span id="res-name" style="font-weight:bold; color: #333;">-</span> 어린이의 결과</div>
+                <div class="mbti-type" id="res-mbti">-</div>
+                
+                <div class="bar-container">
+                    <div class="bar-label"><span>외향형 (E) <span id="pct-E"></span></span> <span><span id="pct-I"></span> 내향형 (I)</span></div>
+                    <div class="bar-bg"><div class="bar-fill" id="bar-EI"></div></div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-label"><span>감각형 (S) <span id="pct-S"></span></span> <span><span id="pct-N"></span> 직관형 (N)</span></div>
+                    <div class="bar-bg"><div class="bar-fill" id="bar-SN"></div></div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-label"><span>이성형 (T) <span id="pct-T"></span></span> <span><span id="pct-F"></span> 감정형 (F)</span></div>
+                    <div class="bar-bg"><div class="bar-fill" id="bar-TF"></div></div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-label"><span>계획형 (J) <span id="pct-J"></span></span> <span><span id="pct-P"></span> 자율형 (P)</span></div>
+                    <div class="bar-bg"><div class="bar-fill" id="bar-JP"></div></div>
+                </div>
+            </div>
+            
+            <button class="save-btn" onclick="saveAsImage()">결과 화면 사진으로 저장 📸</button>
+            <div id="status" class="status">구글 시트에 저장 중...</div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            // E vs I (1~10번)
+            { type: "EI", q: "쉬는 시간에 나는 보통?", a: "친구들과 신나게 뛰어놀아요.", b: "자리에서 조용히 책을 보거나 그려요." },
+            { type: "EI", q: "주말에 하루 종일 집에만 있으면?", a: "심심하고 답답해서 나가고 싶어요.", b: "편안하고 나만의 시간을 보내서 좋아요." },
+            { type: "EI", q: "우리 반에 새 친구가 전학 왔을 때?", a: "내가 먼저 다가가서 말을 걸어요.", b: "다른 친구들이 하는 걸 지켜봐요." },
+            { type: "EI", q: "수업 시간에 발표할 때 내 마음은?", a: "내 생각을 친구들에게 말하고 싶어요.", b: "너무 떨려서 안 하고 싶어요." },
+            { type: "EI", q: "친구들과 매일 방과 후에 노는 것은?", a: "매일 놀아도 지치지 않고 재미있어요!", b: "재미있지만 가끔은 혼자 쉬고 싶어요." },
+            { type: "EI", q: "새로운 학원이나 운동 수업에 처음 갔을 때?", a: "금방 다른 애들과 친해져서 말을 걸어요.", b: "조용히 자리에 앉아 주변 분위기를 살펴요." },
+            { type: "EI", q: "내 생일 파티를 한다면?", a: "우리 반 친구들을 아주 많이 초대하고 싶어요.", b: "진짜 친한 친구 몇 명만 초대하고 싶어요." },
+            { type: "EI", q: "집에서 심심할 때 나는 주로 무엇을 하나요?", a: "친구에게 전화를 걸거나 같이 놀자고 해요.", b: "혼자 유튜브를 보거나 게임, 만들기를 해요." },
+            { type: "EI", q: "여러 사람 앞에서 나를 소개하거나 장기자랑을 할 때?", a: "주목받는 느낌이 들고 은근히 신나요.", b: "너무 부끄럽고 빨리 자리에 앉고 싶어요." },
+            { type: "EI", q: "단체 게임(피구, 이어달리기 등)을 할 때 나는?", a: "소리를 지르며 적극적으로 응원하고 참여해요.", b: "묵묵히 내 역할을 수행하며 조용히 참여해요." },
+
+            // S vs N (11~20번)
+            { type: "SN", q: "재미있는 동화책을 읽을 때?", a: "책에 나오는 내용을 그대로 기억해요.", b: "다음 장에 무슨 일이 일어날지 상상해요." },
+            { type: "SN", q: "미술 시간에 만들기를 할 때?", a: "선생님이 보여주신 예시대로 만들어요.", b: "내 마음대로 새로운 모양을 더해서 만들어요." },
+            { type: "SN", q: "밤하늘에 떠 있는 밝은 달을 보면?", a: "오늘 달이 참 밝고 동그랗구나 해요.", b: "달에는 외계인이 살고 있을까 상상해요." },
+            { type: "SN", q: "친구가 어제 뭐 했냐고 물어보면?", a: "몇 시에 어디 가고 뭘 먹었는지 자세히 말해요.", b: "그냥 집에서 재밌게 놀았어! 라고 말해요." },
+            { type: "SN", q: "수학 문제를 풀 때 더 좋은 방법은?", a: "선생님이 알려주신 공식대로 푸는 것", b: "내가 찾아낸 새로운 방법으로 푸는 것" },
+            { type: "SN", q: "나중에 어른이 된 미래의 모습을 생각할 때?", a: "내가 현실적으로 가질 수 있는 직업을 생각해요.", b: "미래의 세상이 어떻게 변했을지 상상하며 꿈꿔요." },
+            { type: "SN", q: "길을 걷다가 특이하게 생긴 돌을 발견하면?", a: "그냥 신기하게 생긴 돌이네 하고 지나가요.", b: "이 돌이 왜 여기 있을까? 혹시 화석일까 상상해요." },
+            { type: "SN", q: "조립 설명서가 있는 블록 선물을 받으면?", a: "설명서 그림을 순서대로 똑같이 조립해요.", b: "설명서 없이 내 마음대로 새로운 걸 만들어요." },
+            { type: "SN", q: "선생님이 \"자유롭게 글을 써보세요\"라고 하시면?", a: "내가 실제로 겪었던 일이나 일기를 써요.", b: "우주 여행이나 마법 학교 같은 상상 이야기를 써요." },
+            { type: "SN", q: "새로운 게임 규칙을 배울 때 나는?", a: "정해진 규칙 그대로 정확하게 플레이하는 게 좋아요.", b: "규칙을 조금씩 바꾸어 더 재미있게 하는 게 좋아요." },
+
+            // T vs F (21~30번)
+            { type: "TF", q: "친구가 넘어져서 울고 있다면?", a: "어디 다쳤지? 보건실 가야 하나 생각해요.", b: "정말 아프겠다 속상하겠다 마음이 아파요." },
+            { type: "TF", q: "새로운 장난감 선물을 받으면?", a: "어떻게 움직이고 작동하는지 원리가 궁금해요.", b: "예쁜 이름을 지어주고 인형 친구로 삼고 싶어요." },
+            { type: "TF", q: "모둠 활동 중 친구와 의견이 다를 때?", a: "누구 말이 더 맞고 논리적인지 따져봐요.", b: "친구가 속상하지 않게 최대한 기분을 맞춰줘요." },
+            { type: "TF", q: "선생님께 들을 때 더 기분 좋은 칭찬은?", a: "이번 시험 다 맞았구나! 정말 똑똑해!", b: "쉬지 않고 열심히 노력했구나! 정말 대단해!" },
+            { type: "TF", q: "친구가 나에게 속상한 고민을 말할 때?", a: "문제를 해결할 수 있는 방법을 생각해서 알려줘요.", b: "토닥여주면서 친구 마음에 공감하고 위로해줘요." },
+            { type: "TF", q: "숙제를 안 해온 친구가 선생님께 혼나고 있을 때 내 생각은?", a: "숙제를 안 해왔으니 혼나는 게 맞지 라고 생각해요.", b: "친구들 앞에서 혼나서 부끄럽고 속상하겠다 생각해요." },
+            { type: "TF", q: "친구가 새로 산 옷을 보여주며 어떠냐고 묻는데 내 스타일이 아닐 때?", a: "\"내 스타일은 아니지만 괜찮아\"라고 솔직하게 말해요.", b: "\"우와 진짜 예쁘다! 잘 어울려!\"라고 기분 좋게 말해요." },
+            { type: "TF", q: "부모님이 심부름을 잘했다고 용돈을 주실 때 더 좋은 말씀은?", a: "\"정확하게 잘 사왔구나, 고맙다.\"", b: "\"엄마 아빠를 도와줘서 너무 고마워, 넌 최고야!\"" },
+            { type: "TF", q: "보드게임을 하다가 내가 졌을 때?", a: "다음 판에는 어떻게 해야 이길지 이성적으로 분석해요.", b: "속상해서 기분이 울적해지고 더 하기 싫어져요." },
+            { type: "TF", q: "슬픈 영화나 애니메이션을 볼 때 나는?", a: "스토리나 설정이 말이 되는지 집중해서 봐요.", b: "주인공의 마음에 감정 이입을 해서 같이 눈물을 흘려요." },
+
+            // J vs P (31~40번)
+            { type: "JP", q: "내 책상 서랍이나 사물함 안은?", a: "항상 물건들이 종류별로 제자리에 깔끔해요.", b: "내가 쓰기 편한 대로 흩어져 있어서 찾을 때가 있어요." },
+            { type: "JP", q: "내일 학교 갈 준비(가방 싸기)는?", a: "잠들기 전 밤에 미리 다 싸놓아야 마음이 편해요.", b: "아침에 일어나서 등교하기 전에 가방을 싸요." },
+            { type: "JP", q: "방학 숙제를 할 때 나는?", a: "계획표를 짜서 매일 조금씩 미리 끝내놔요.", b: "신나게 놀다가 방학 끝나기 직전에 몰아서 해요." },
+            { type: "JP", q: "친구와 주말에 만나서 놀기로 했다면?", a: "몇 시에 어디서 만나서 무엇을 할지 미리 정해요.", b: "일단 만나서 그날 하고 싶은 걸 정해요." },
+            { type: "JP", q: "일기 쓰기 숙제가 있을 때?", a: "미루지 않고 그날그날 저녁에 바로 써요.", b: "며칠 동안 밀렸다가 주말에 한꺼번에 써요." },
+            { type: "JP", q: "시험 단원평가 공부를 해야 할 때 나는?", a: "하루에 몇 페이지씩 풀지 구체적인 계획을 세워요.", b: "그냥 눈에 보이는 책을 잡히는 대로 공부해요." },
+            { type: "JP", q: "가족들과 여행을 가기 전날 내 모습은?", a: "필요한 물건을 리스트로 적어 꼼꼼히 챙겨요.", b: "대충 필요한 것만 가방에 넣고 내일 생각해요." },
+            { type: "JP", q: "갑자기 학교 일정이 바뀌어서 다른 활동을 해야 한다면?", a: "미리 생각한 계획이 틀어져서 마음에 들지 않아요.", b: "그럴 수도 있지 하며 상황에 맞춰 금방 적응해요." },
+            { type: "JP", q: "일상생활에서 정해진 규칙이나 시간 약속은?", a: "반드시 철저하게 지켜야 마음이 편해요.", b: "상황에 따라 조금 늦거나 규칙을 바꿀 수도 있다고 봐요." },
+            { type: "JP", q: "만들기를 하다가 수업 시간이 다 되었을 때 내 작품은?", a: "시간 안에 딱 맞춰서 완성도 있게 끝내요.", b: "새로운 아이디어가 자꾸 떠올라 완성하지 못할 때가 많아요." }
+        ];
+
+        let currentIdx = 0; let userName = "";
+        const scores = { E:0, I:0, S:0, N:0, T:0, F:0, J:0, P:0 };
+
+        function startTest() {
+            userName = document.getElementById("student-name").value.trim();
+            if (!userName) { alert("이름을 입력해주세요! 😊"); return; }
+            document.getElementById("start-page").classList.add("hidden");
+            document.getElementById("question-page").classList.remove("hidden");
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentIdx >= questions.length) { showResult(); return; }
+            document.getElementById("progress").style.width = (currentIdx / questions.length) * 100 + "%";
+            document.getElementById("question-counter").innerText = `${currentIdx + 1} / ${questions.length}`;
+            const currentQ = questions[currentIdx];
+            document.getElementById("question-text").innerText = currentQ.q;
+            document.getElementById("ansA").innerText = currentQ.a;
+            document.getElementById("ansB").innerText = currentQ.b;
+        }
+
+        function submitAnswer(choice) {
+            const currentQ = questions[currentIdx];
+            if (choice === 'A') scores[currentQ.type[0]]++; else scores[currentQ.type[1]]++;
+            currentIdx++; showQuestion();
+        }
+
+        function showResult() {
+            document.getElementById("question-page").classList.add("hidden");
+            document.getElementById("result-page").classList.remove("hidden");
+            document.getElementById("res-name").innerText = userName;
+
+            let mbti = (scores.E >= scores.I ? "E":"I") + (scores.S >= scores.N ? "S":"N") + (scores.T >= scores.F ? "T":"F") + (scores.J >= scores.P ? "J":"P");
+            document.getElementById("res-mbti").innerText = mbti;
+
+            const pctE = Math.round((scores.E / 10) * 100); const pctI = 100 - pctE;
+            const pctS = Math.round((scores.S / 10) * 100); const pctN = 100 - pctS;
+            const pctT = Math.round((scores.T / 10) * 100); const pctF = 100 - pctT;
+            const pctJ = Math.round((scores.J / 10) * 100); const pctP = 100 - pctJ;
+
+            document.getElementById("pct-E").innerText = pctE+"%"; document.getElementById("pct-I").innerText = pctI+"%"; document.getElementById("bar-EI").style.width = pctE+"%";
+            document.getElementById("pct-S").innerText = pctS+"%"; document.getElementById("pct-N").innerText = pctN+"%"; document.getElementById("bar-SN").style.width = pctS+"%";
+            document.getElementById("pct-T").innerText = pctT+"%"; document.getElementById("pct-F").innerText = pctF+"%"; document.getElementById("bar-TF").style.width = pctT+"%";
+            document.getElementById("pct-J").innerText = pctJ+"%"; document.getElementById("pct-P").innerText = pctP+"%"; document.getElementById("bar-JP").style.width = pctJ+"%";
+
+            google.script.run
+                .withSuccessHandler(function() {
+                    document.getElementById("status").innerText = "✅ 구글 시트 명부에 기록 완료!";
+                })
+                .saveMbtiData({ name: userName, mbti: mbti, scores: { E:pctE, I:pctI, S:pctS, N:pctN, T:pctT, F:pctF, J:pctJ, P:pctP } });
+        }
+
+        function saveAsImage() {
+            const resultCard = document.getElementById("result-card");
+            html2canvas(resultCard, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: null
+            }).then(canvas => {
+                const link = document.createElement("a");
+                link.download = `${userName || '어린이'}_MBTI_결과.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            }).catch(err => {
+                alert("사진 저장 중 오류가 발생했습니다. 다시 시도해 주세요.");
+                console.error(err);
+            });
+        }
+    </script>
+</body>
+</html>
